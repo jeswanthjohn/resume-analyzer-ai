@@ -1,3 +1,5 @@
+alert("app.js loaded");
+
 const input = document.getElementById("resumeInput");
 const button = document.getElementById("analyzeBtn");
 const status = document.getElementById("status");
@@ -24,18 +26,35 @@ button.addEventListener("click", async () => {
 
   try {
     const res = await fetch("/analyze", {
-      method: "POST",
-      body: formData,
-    });
+  method: "POST",
+  body: formData,
+});
 
-    const data = await res.json();
+if (!res.ok) {
+  const errorText = await res.text();
+  throw new Error(errorText || "Analysis failed");
+}
 
-    if (data.error) {
-      throw new Error(data.error);
-    }
+const data = await res.json();
 
-    result.textContent = data.result;
-    status.textContent = "Analysis complete ✅";
+status.textContent = "Analysis complete ✅";
+
+// render nicely instead of dumping raw JSON
+result.innerHTML = `
+  <p><strong>ATS Score:</strong> ${data.ats_score}</p>
+  <p><strong>Strengths:</strong></p>
+  <ul>${data.strengths.map(s => `<li>${s}</li>`).join("")}</ul>
+
+  <p><strong>Weaknesses:</strong></p>
+  <ul>${data.weaknesses.map(w => `<li>${w}</li>`).join("")}</ul>
+
+  <p><strong>Missing Skills:</strong></p>
+  <ul>${data.missing_skills.map(m => `<li>${m}</li>`).join("")}</ul>
+
+  <p><strong>Suggestions:</strong></p>
+  <ul>${data.suggestions.map(s => `<li>${s}</li>`).join("")}</ul>
+`;
+
   } catch (err) {
     status.textContent = "Analysis failed ❌";
     result.textContent = err.message;
