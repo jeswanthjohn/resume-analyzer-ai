@@ -1,30 +1,14 @@
 {
   "name": "resume-analyzer-ai",
   "version": "1.0.0",
-  "description": "An AI-powered web application that analyzes resumes using PDF parsing and OpenAI to provide ATS-style feedback.",
   "main": "server.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node server.js"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "module",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/jeswanthjohn/resume-analyzer-ai.git"
-  },
-  "bugs": {
-    "url": "https://github.com/jeswanthjohn/resume-analyzer-ai/issues"
-  },
-  "homepage": "https://github.com/jeswanthjohn/resume-analyzer-ai#readme",
+  "scripts": { "start": "node server.js" },
   "dependencies": {
+    "express": "^4.19.2",
     "cors": "^2.8.5",
-    "dotenv": "^17.2.3",
-    "express": "^5.2.1",
-    "multer": "^2.0.2",
+    "multer": "^1.4.5-lts.1",
     "openai": "^4.56.0",
-    "pdf-parse": "^2.4.5"
+    "pdf-parse": "^1.1.1",
+    "dotenv": "^16.4.5"
   }
 }
