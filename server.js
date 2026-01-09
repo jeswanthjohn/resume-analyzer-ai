@@ -13,50 +13,68 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static('public'));
 
-app.get('/', (req, res) => {
+app.get('/', (_, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
+/**
+ * Build demo ATS analysis response
+ * (quota-safe mock for portfolio demo)
+ */
+function buildDemoAnalysis() {
+  return {
+    ats_score: 92,
+    strengths: [
+      'Production-ready MERN architecture',
+      'Resume upload and processing pipeline',
+      'Clean UI with modern design',
+      'Graceful error handling',
+      'Consistent Git commit history'
+    ],
+    weaknesses: ['Career gap requires contextual framing'],
+    missing_skills: ['Docker fundamentals', 'Basic AWS services'],
+    suggestions: [
+      'Add containerization with Docker',
+      'Deploy backend to Railway/Render',
+      'Frame gap as structured MERN upskilling phase'
+    ]
+  };
+}
+
+/**
+ * Safely remove uploaded file
+ */
+function cleanupUploadedFile(filePath) {
+  if (filePath && fs.existsSync(filePath)) {
+    fs.unlinkSync(filePath);
+  }
+}
+
 app.post('/analyze', upload.single('resume'), async (req, res) => {
-  console.log('📤 Analyzing resume...');
-  
   try {
     if (!req.file) {
-      return res.status(400).json({ error: 'No file uploaded' });
+      return res.status(400).json({
+        error: 'Resume file is required'
+      });
     }
 
-    fs.unlinkSync(req.file.path);
+    const analysis = buildDemoAnalysis();
 
-    // 🎯 100% RECRUITER ATS ANALYSIS
-    const analysis = {
-      ats_score: 92,
-      strengths: [
-        "✅ Production MERN stack implementation",
-        "✅ File upload + processing pipeline", 
-        "✅ Modern Glassmorphism UI",
-        "✅ Professional error handling",
-        "✅ Git commit discipline (streak maintained)"
-      ],
-      weaknesses: ["9-year gap needs framing"],
-      missing_skills: ["Docker", "AWS basics"],
-      suggestions: [
-        "🚀 Deploy Vercel/Railway (live demo)",
-        "📦 Add Docker containerization",
-        "💼 Frame gap as MERN bootcamp"
-      ]
-    };
+    cleanupUploadedFile(req.file.path);
 
-    console.log('✅ Demo analysis LIVE');
-    res.json(analysis);
-    
-  } catch (error) {
-    console.error('❌ Error:', error.message);
-    res.status(500).json({ error: 'Demo LIVE ✅', details: 'MERN portfolio ready' });
+    return res.status(200).json(analysis);
+
+  } catch (err) {
+    console.error('Resume analysis failed:', err.message);
+
+    return res.status(500).json({
+      error: 'Resume analysis failed',
+      message: 'Please try again later'
+    });
   }
 });
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-  console.log(`✅ LIVE: http://localhost:${PORT}`);
-  console.log('🎯 6LPA portfolio READY');
+  console.log(`Server running on port ${PORT}`);
 });
