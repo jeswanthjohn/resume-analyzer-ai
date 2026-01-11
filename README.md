@@ -61,18 +61,6 @@ This mirrors **real-world production systems**, where external APIs are treated 
 - OpenAI API (`gpt-4o-mini`)
 - Quota-aware fallback mechanism
 
-### Deployment (Render)
-
-- Platform: Render
-- Service type: Web Service
-- Runtime: Node.js
-- Environment variables:
-  - MONGO_URI
-  - PORT : 500
-- Status: In progress (MongoDB connection issue being resolved)
-
----
-
 ## 🚀 Quick Setup (Local)
 
 ```bash
