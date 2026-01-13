@@ -113,8 +113,11 @@ export default async function handler(req, res) {
         _meta: { ai_used: true },
       });
     } catch (aiError) {
-      console.warn("⚠️ AI failed, using mock:", aiError.message);
-      return res.status(200).json(buildDemoAnalysis());
+  console.error("❌ OPENAI ERROR:", aiError);
+  return res.status(500).json({
+    error: "OpenAI call failed",
+    details: aiError.message || aiError.toString()
+  });
     }
   } catch (err) {
     console.error("❌ Resume analysis failed:", err);
