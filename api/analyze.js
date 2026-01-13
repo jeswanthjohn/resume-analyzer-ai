@@ -1,21 +1,30 @@
 import OpenAI from "openai";
 
 /* =========================
+   CONFIG FLAGS
+========================= */
+
+// Explicit mock mode for cost-safe demos
+const MOCK_MODE = process.env.MOCK_MODE === "true";
+
+/* =========================
    OpenAI Client (SAFE INIT)
 ========================= */
+
 let openai = null;
 
-if (process.env.OPENAI_API_KEY) {
+if (!MOCK_MODE && process.env.OPENAI_API_KEY) {
   openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
   });
 } else {
-  console.warn("⚠️ OPENAI_API_KEY not set. Running in mock-only mode.");
+  console.warn("🧪 MOCK MODE ENABLED — OpenAI will not be called");
 }
 
 /* =========================
-   Mock ATS analysis fallback
+   Deterministic Mock Analysis
 ========================= */
+
 function buildDemoAnalysis() {
   return {
     ats_score: 92,
@@ -33,16 +42,13 @@ function buildDemoAnalysis() {
       "Add containerization basics",
       "Include metrics in project descriptions",
     ],
-    _meta: {
-      ai_used: false,
-      reason: "mock_fallback",
-    },
   };
 }
 
 /* =========================
-   Real AI analysis
+   Real AI Analysis
 ========================= */
+
 async function analyzeResumeWithAI(resumeText) {
   if (!openai) {
     throw new Error("OpenAI client not initialized");
@@ -65,33 +71,33 @@ ${resumeText}
 `;
 
   const response = await openai.responses.create({
-  model: "gpt-4o-mini",
-  input: [
-    {
-      role: "system",
-      content: "You are a strict ATS evaluator.",
-    },
-    {
-      role: "user",
-      content: prompt,
-    },
-  ],
-  max_output_tokens: 300,
-});
+    model: "gpt-4o-mini",
+    input: [
+      {
+        role: "system",
+        content: "You are a strict ATS evaluator.",
+      },
+      {
+        role: "user",
+        content: prompt,
+      },
+    ],
+    max_output_tokens: 300,
+  });
 
-const content = response.output_text;
+  const content = response.output_text;
 
-try {
-  return JSON.parse(content);
-} catch {
-  throw new Error("Invalid JSON returned by OpenAI");
-}
-
+  try {
+    return JSON.parse(content);
+  } catch {
+    throw new Error("Invalid JSON returned by OpenAI");
+  }
 }
 
 /* =========================
    Vercel Serverless Handler
 ========================= */
+
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
@@ -106,18 +112,35 @@ export default async function handler(req, res) {
       });
     }
 
+    /* -------- MOCK MODE (EXPLICIT) -------- */
+    if (MOCK_MODE) {
+      return res.status(200).json({
+        ...buildDemoAnalysis(),
+        _meta: {
+          ai_used: false,
+          reason: "explicit_mock_mode",
+        },
+      });
+    }
+
+    /* -------- REAL AI PATH -------- */
     try {
       const aiResult = await analyzeResumeWithAI(resumeText);
       return res.status(200).json({
         ...aiResult,
-        _meta: { ai_used: true },
+        _meta: {
+          ai_used: true,
+        },
       });
     } catch (aiError) {
-  console.error("❌ OPENAI ERROR:", aiError);
-  return res.status(500).json({
-    error: "OpenAI call failed",
-    details: aiError.message || aiError.toString()
-  });
+      console.warn("⚠️ AI failed, using mock fallback:", aiError.message);
+      return res.status(200).json({
+        ...buildDemoAnalysis(),
+        _meta: {
+          ai_used: false,
+          reason: "ai_failure_fallback",
+        },
+      });
     }
   } catch (err) {
     console.error("❌ Resume analysis failed:", err);
