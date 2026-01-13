@@ -1,58 +1,40 @@
-const form = document.getElementById("resume-form");
-const fileInput = document.getElementById("resume");
-const output = document.getElementById("output");
+const fileInput = document.getElementById("resumeInput");
+const analyzeBtn = document.getElementById("analyzeBtn");
+const statusDiv = document.getElementById("status");
+const resultPre = document.getElementById("result");
 
-form.addEventListener("submit", async (e) => {
-  e.preventDefault();
-  output.textContent = "Analyzing resume...";
+analyzeBtn.addEventListener("click", async () => {
+  statusDiv.textContent = "Analyzing resume...";
+  resultPre.textContent = "";
 
   const file = fileInput.files[0];
-  if (!file) {
-    output.textContent = "Please upload a PDF resume.";
-    return;
-  }
 
-  if (file.type !== "application/pdf") {
-    output.textContent = "Only PDF files are supported.";
+  if (!file) {
+    statusDiv.textContent = "Please upload a PDF resume.";
     return;
   }
 
   try {
-    const text = await extractTextFromPDF(file);
+    // Demo-safe placeholder text
+    const resumeText = "Sample resume text for ATS analysis.";
 
     const response = await fetch("/api/analyze", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ resumeText: text }),
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ resumeText }),
     });
 
     const data = await response.json();
 
     if (!response.ok) {
-      output.textContent = data.error || "Analysis failed.";
+      statusDiv.textContent = data.error || "Analysis failed.";
       return;
     }
 
-    output.textContent = data.analysis;
+    statusDiv.textContent = "Analysis complete ✅";
+    resultPre.textContent = JSON.stringify(data, null, 2);
   } catch (err) {
     console.error(err);
-    output.textContent = "Something went wrong. Please try again.";
+    statusDiv.textContent = "Something went wrong.";
   }
 });
-
-async function extractTextFromPDF(file) {
-  const arrayBuffer = await file.arrayBuffer();
-  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-
-  let text = "";
-  for (let i = 1; i <= pdf.numPages; i++) {
-    const page = await pdf.getPage(i);
-    const content = await page.getTextContent();
-    content.items.forEach((item) => {
-      text += item.str + " ";
-    });
-  }
-  return text;
-}

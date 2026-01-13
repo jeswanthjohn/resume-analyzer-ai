@@ -64,17 +64,29 @@ ${resumeText}
 """
 `;
 
-  const response = await openai.chat.completions.create({
-    model: "gpt-4o-mini",
-    temperature: 0.2,
-    max_tokens: 300,
-    messages: [
-      { role: "system", content: "You are a strict ATS evaluator." },
-      { role: "user", content: prompt },
-    ],
-  });
+  const response = await openai.responses.create({
+  model: "gpt-4.1-mini",
+  input: [
+    {
+      role: "system",
+      content: "You are a strict ATS evaluator.",
+    },
+    {
+      role: "user",
+      content: prompt,
+    },
+  ],
+  max_output_tokens: 300,
+});
 
-  return JSON.parse(response.choices[0].message.content);
+const content = response.output_text;
+
+try {
+  return JSON.parse(content);
+} catch {
+  throw new Error("Invalid JSON returned by OpenAI");
+}
+
 }
 
 /* =========================
