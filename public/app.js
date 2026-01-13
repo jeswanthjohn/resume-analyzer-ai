@@ -16,7 +16,12 @@ analyzeBtn.addEventListener("click", async () => {
 
   try {
     // Demo-safe placeholder text
-    const resumeText = "Sample resume text for ATS analysis.";
+    const resumeText = `
+Experienced software developer with hands-on experience in JavaScript, Node.js,
+REST APIs, serverless architecture, and cloud deployment. Built multiple full-stack
+projects involving frontend UI, backend APIs, and third-party integrations.
+Strong understanding of debugging, error handling, and production-ready systems.
+`;
 
     const response = await fetch("/api/analyze", {
       method: "POST",
