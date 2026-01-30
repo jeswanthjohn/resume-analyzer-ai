@@ -17,6 +17,30 @@ const LIMITS = {
 };
 
 /* =========================
+   RATE LIMITING (SIMPLE, SAFE)
+========================= */
+
+// In-memory store (acceptable for demo / serverless)
+const RATE_LIMIT_WINDOW_MS = 60_000; // 1 minute
+const RATE_LIMIT_MAX_REQUESTS = 5;
+
+const requestStore = new Map();
+
+function isRateLimited(ip) {
+  const now = Date.now();
+  const windowStart = now - RATE_LIMIT_WINDOW_MS;
+
+  const timestamps = requestStore.get(ip) || [];
+
+  const recentRequests = timestamps.filter(ts => ts > windowStart);
+  recentRequests.push(now);
+
+  requestStore.set(ip, recentRequests);
+
+  return recentRequests.length > RATE_LIMIT_MAX_REQUESTS;
+}
+
+/* =========================
    OpenAI Client (SAFE INIT)
 ========================= */
 
@@ -142,6 +166,18 @@ export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({
       error: "Method not allowed",
+    });
+  }
+
+  /* -------- RATE LIMIT ENFORCEMENT -------- */
+  const ip =
+    req.headers["x-forwarded-for"]?.split(",")[0] ||
+    req.socket?.remoteAddress ||
+    "unknown";
+
+  if (isRateLimited(ip)) {
+    return res.status(429).json({
+      error: "Too many requests. Please try again later.",
     });
   }
 
