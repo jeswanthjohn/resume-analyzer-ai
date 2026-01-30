@@ -20,7 +20,6 @@ const LIMITS = {
    RATE LIMITING (SIMPLE, SAFE)
 ========================= */
 
-// In-memory store (acceptable for demo / serverless)
 const RATE_LIMIT_WINDOW_MS = 60_000; // 1 minute
 const RATE_LIMIT_MAX_REQUESTS = 5;
 
@@ -31,13 +30,26 @@ function isRateLimited(ip) {
   const windowStart = now - RATE_LIMIT_WINDOW_MS;
 
   const timestamps = requestStore.get(ip) || [];
-
   const recentRequests = timestamps.filter(ts => ts > windowStart);
-  recentRequests.push(now);
 
+  recentRequests.push(now);
   requestStore.set(ip, recentRequests);
 
   return recentRequests.length > RATE_LIMIT_MAX_REQUESTS;
+}
+
+/* =========================
+   UNIFIED ERROR HELPER
+========================= */
+
+function apiError(res, status, code, message) {
+  return res.status(status).json({
+    success: false,
+    error: {
+      code,
+      message,
+    },
+  });
 }
 
 /* =========================
@@ -84,10 +96,7 @@ function buildDemoAnalysis() {
 
 function validateResumeText(resumeText) {
   if (typeof resumeText !== "string") {
-    return {
-      ok: false,
-      message: "Resume text must be a string.",
-    };
+    return { ok: false, message: "Resume text must be a string." };
   }
 
   const trimmed = resumeText.trim();
@@ -137,14 +146,8 @@ ${resumeText}
   const response = await openai.responses.create({
     model: "gpt-4o-mini",
     input: [
-      {
-        role: "system",
-        content: "You are a strict ATS evaluator.",
-      },
-      {
-        role: "user",
-        content: prompt,
-      },
+      { role: "system", content: "You are a strict ATS evaluator." },
+      { role: "user", content: prompt },
     ],
     max_output_tokens: 300,
   });
@@ -164,9 +167,7 @@ ${resumeText}
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
-    return res.status(405).json({
-      error: "Method not allowed",
-    });
+    return apiError(res, 405, "METHOD_NOT_ALLOWED", "Only POST requests allowed");
   }
 
   /* -------- RATE LIMIT ENFORCEMENT -------- */
@@ -176,26 +177,27 @@ export default async function handler(req, res) {
     "unknown";
 
   if (isRateLimited(ip)) {
-    return res.status(429).json({
-      error: "Too many requests. Please try again later.",
-    });
+    return apiError(
+      res,
+      429,
+      "RATE_LIMITED",
+      "Too many requests. Please try again later."
+    );
   }
 
   try {
     const { resumeText } = req.body ?? {};
 
-    /* -------- VALIDATION (ENFORCED) -------- */
+    /* -------- VALIDATION -------- */
     const validation = validateResumeText(resumeText);
-
     if (!validation.ok) {
-      return res.status(400).json({
-        error: validation.message,
-      });
+      return apiError(res, 400, "INVALID_INPUT", validation.message);
     }
 
-    /* -------- MOCK MODE (EXPLICIT) -------- */
+    /* -------- MOCK MODE -------- */
     if (MOCK_MODE) {
       return res.status(200).json({
+        success: true,
         ...buildDemoAnalysis(),
         _meta: {
           ai_used: false,
@@ -209,6 +211,7 @@ export default async function handler(req, res) {
       const aiResult = await analyzeResumeWithAI(resumeText);
 
       return res.status(200).json({
+        success: true,
         ...aiResult,
         _meta: {
           ai_used: true,
@@ -218,6 +221,7 @@ export default async function handler(req, res) {
       console.warn("⚠️ AI failed, using mock fallback:", aiError.message);
 
       return res.status(200).json({
+        success: true,
         ...buildDemoAnalysis(),
         _meta: {
           ai_used: false,
@@ -228,8 +232,11 @@ export default async function handler(req, res) {
   } catch (err) {
     console.error("❌ Resume analysis failed:", err);
 
-    return res.status(500).json({
-      error: "Resume analysis failed",
-    });
+    return apiError(
+      res,
+      500,
+      "INTERNAL_ERROR",
+      "Resume analysis failed"
+    );
   }
 }
