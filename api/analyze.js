@@ -8,6 +8,15 @@ import OpenAI from "openai";
 const MOCK_MODE = process.env.MOCK_MODE === "true";
 
 /* =========================
+   VALIDATION LIMITS
+========================= */
+
+const LIMITS = {
+  MIN_TEXT_LENGTH: 300,
+  MAX_TEXT_LENGTH: 12_000,
+};
+
+/* =========================
    OpenAI Client (SAFE INIT)
 ========================= */
 
@@ -43,6 +52,37 @@ function buildDemoAnalysis() {
       "Include metrics in project descriptions",
     ],
   };
+}
+
+/* =========================
+   Input Validation
+========================= */
+
+function validateResumeText(resumeText) {
+  if (typeof resumeText !== "string") {
+    return {
+      ok: false,
+      message: "Resume text must be a string.",
+    };
+  }
+
+  const trimmed = resumeText.trim();
+
+  if (trimmed.length < LIMITS.MIN_TEXT_LENGTH) {
+    return {
+      ok: false,
+      message: "Resume text is too short for meaningful analysis.",
+    };
+  }
+
+  if (trimmed.length > LIMITS.MAX_TEXT_LENGTH) {
+    return {
+      ok: false,
+      message: "Resume text exceeds maximum allowed length.",
+    };
+  }
+
+  return { ok: true };
 }
 
 /* =========================
@@ -100,15 +140,20 @@ ${resumeText}
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
-    return res.status(405).json({ error: "Method not allowed" });
+    return res.status(405).json({
+      error: "Method not allowed",
+    });
   }
 
   try {
-    const { resumeText } = req.body;
+    const { resumeText } = req.body ?? {};
 
-    if (!resumeText || resumeText.trim().length < 50) {
+    /* -------- VALIDATION (ENFORCED) -------- */
+    const validation = validateResumeText(resumeText);
+
+    if (!validation.ok) {
       return res.status(400).json({
-        error: "Resume text is missing or too short",
+        error: validation.message,
       });
     }
 
@@ -126,6 +171,7 @@ export default async function handler(req, res) {
     /* -------- REAL AI PATH -------- */
     try {
       const aiResult = await analyzeResumeWithAI(resumeText);
+
       return res.status(200).json({
         ...aiResult,
         _meta: {
@@ -134,6 +180,7 @@ export default async function handler(req, res) {
       });
     } catch (aiError) {
       console.warn("⚠️ AI failed, using mock fallback:", aiError.message);
+
       return res.status(200).json({
         ...buildDemoAnalysis(),
         _meta: {
@@ -144,6 +191,7 @@ export default async function handler(req, res) {
     }
   } catch (err) {
     console.error("❌ Resume analysis failed:", err);
+
     return res.status(500).json({
       error: "Resume analysis failed",
     });
