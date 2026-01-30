@@ -1,120 +1,137 @@
-# Resume Analyzer AI 🚀
+Resume Analyzer AI 🚀
 
-A serverless AI-powered resume analysis web application that generates **ATS-style feedback** using the OpenAI API, with a **production-safe fallback mechanism** to ensure reliability when external services fail.
+A serverless resume analysis web application that generates ATS-style feedback using the OpenAI API, with a failure-tolerant fallback design to ensure the application remains functional even when external AI services fail.
 
-This project is intentionally designed as a **portfolio-grade demonstration** of backend reliability, API integration, and defensive system design — not as a UI-heavy product.
+This project is intentionally built as a portfolio-grade demonstration of backend reliability, defensive API design, and production-aware engineering, rather than a UI-focused product.
 
----
+✨ Live Demo
 
-## ✨ Live Demo
+🔗 https://resume-analyzer-ai-eta.vercel.app/
 
-**Deployed:** Vercel (Frontend + Serverless Backend)
+⚠️ Important
+AI responses depend on OpenAI API availability and quota limits.
+When the API is unavailable, the application automatically falls back to a deterministic mock analysis so the demo never breaks.
 
-> ⚠️ AI responses depend on OpenAI API availability and quota limits.
-> If the API is unavailable, the application automatically falls back to a deterministic mock analysis so the demo never breaks.
+This behavior is intentional and mirrors real-world production systems.
 
----
+🎯 What This Project Demonstrates
 
-## 🎯 What This Project Demonstrates
+This project focuses on engineering quality, not feature bloat.
 
-- Clean **serverless architecture** using Vercel Functions
-- Secure **OpenAI API integration** (no secrets exposed to frontend)
-- **Failure-tolerant design** with graceful fallback behavior
-- Clear **frontend ↔ backend API contract**
-- Production-style error handling and logging
+Serverless backend architecture using Vercel Functions
 
-This project prioritizes **correctness, reliability, and explainability** over visual polish.
+Secure OpenAI API integration (no secrets exposed to the frontend)
 
----
+Failure-tolerant system design with graceful fallback behavior
 
-## 🔑 Key Features
+Clear and stable frontend ↔ backend API contract
 
-- 📁 Resume upload (PDF)
-- 🎯 ATS-style resume analysis using OpenAI
-- 🛡 Automatic fallback when API quota is exceeded or unavailable
-- 💡 Actionable improvement suggestions
-- ⚙️ Serverless backend with defensive error handling
-- 🧪 Stable demo behavior for recruiters and reviewers
+Input validation, rate limiting, and defensive error handling
 
----
+Predictable runtime behavior under failure conditions
 
-## 🧠 How AI Integration Works
+Design priority: correctness, reliability, and explainability over UI polish.
 
-1. The frontend sends extracted resume text to a serverless API endpoint (`/api/analyze`).
-2. The backend attempts analysis using the OpenAI API.
-3. If the API call fails (quota exceeded, missing key, malformed response):
+🔑 Key Features
 
-   - the error is logged,
-   - a deterministic mock analysis is returned,
-   - the application continues functioning without crashing.
+Resume upload (PDF)
 
-This mirrors **real-world production systems**, where third-party APIs are treated as unreliable dependencies.
+ATS-style resume evaluation
 
----
+Automatic fallback when AI services fail or quota is exceeded
 
-## 🛠 Tech Stack
+Actionable improvement suggestions
 
-### Frontend
+Serverless backend with defensive safeguards
 
-- HTML5
-- CSS3
-- Vanilla JavaScript
+Stable demo behavior suitable for recruiters and reviewers
 
-> The UI is intentionally minimal to keep the focus on backend reliability and API behavior.
+🧠 How the AI Integration Works
 
-### Backend (Serverless)
+The frontend extracts resume text and sends it to /api/analyze.
 
-- Node.js
-- Vercel Serverless Functions
+The serverless backend validates input and enforces rate limits.
 
-### AI
+The backend attempts analysis using the OpenAI API.
 
-- OpenAI API (Responses API)
-- Quota-aware fallback mechanism
+If the AI call fails for any reason (quota, invalid response, network issue):
 
----
+the error is handled gracefully,
 
-## 🚀 Local Development
+a deterministic mock analysis is returned,
 
-```bash
+the application continues without crashing.
+
+This approach treats third-party APIs as unreliable dependencies, which is how production systems are designed.
+
+🛠 Tech Stack
+Frontend
+
+HTML5
+
+CSS3
+
+Vanilla JavaScript
+
+The UI is intentionally minimal to keep focus on backend behavior and API reliability.
+
+Backend (Serverless)
+
+Node.js
+
+Vercel Serverless Functions
+
+AI
+
+OpenAI Responses API
+
+Quota-aware fallback mechanism
+
+🚀 Local Development
+
+Run the following commands from the project root:
+
 npm install
-```
+npx vercel dev
 
-Run locally using Vercel CLI or any compatible Node 18+ environment.
+🔐 Environment Variables
 
-### Environment Variables
+Create a .env.local file or set the following variables in your environment:
 
-Set the following in your environment:
-
-```env
 OPENAI_API_KEY=your_openai_api_key_here
-```
+MOCK_MODE=true
 
-If the key is missing or the quota is exceeded, the application automatically switches to mock mode.
 
----
+Notes
 
-## 📌 Current Limitations
+If OPENAI_API_KEY is missing or quota is exceeded, the app automatically switches to mock mode.
 
-- PDF text extraction is simplified for demo stability
-- UI presentation is intentionally minimal
-- Mock responses are used when the AI service is unavailable
+Mock mode ensures the application remains stable during demos and reviews.
 
-These limitations are **intentional, documented, and reversible**.
+📌 Current Limitations (Intentional)
 
----
+PDF text extraction is simplified for stability
 
-## 🔮 Planned Enhancements
+UI design is minimal by design
 
-- Backend-side PDF text extraction pipeline
-- Rate limiting and request validation
-- Token usage optimization
-- Polished UI layered on top of a stable data contract
+Mock responses are used when AI services are unavailable
 
----
+These trade-offs are explicit, documented, and reversible.
 
-## 👤 Author
+🔮 Potential Enhancements (Not Implemented Yet)
 
-**Jeswanth Reddy**
+Advanced PDF parsing pipeline
+
+Persistent rate limiting (Redis / KV)
+
+Token usage optimization
+
+Enhanced UI layered on top of the existing API contract
+
+These are intentionally omitted to keep the project focused and reviewable.
+
+👤 Author
+
+Jeswanth Reddy
 Aspiring Full-Stack Developer
-Focused on building reliable, production-grade systems
+Focused on building reliable, production-grade systems, not fragile demos.
