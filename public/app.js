@@ -38,10 +38,10 @@ Strong understanding of debugging, error handling, and production-ready systems.
       return;
     }
 
-    // explicit, recruiter-safe analysis mode transparency
+    //  cost-aware transparency 
     if (data._meta && data._meta.ai_used === false) {
       analysisModeEl.textContent =
-        "Analysis Mode: Fallback (Mock) — AI calls disabled for cost-controlled demo";
+        "Analysis Mode: Fallback (Mock) — AI calls disabled for cost-controlled demo (intentional)";
     } else {
       analysisModeEl.textContent = "Analysis Mode: AI";
     }
