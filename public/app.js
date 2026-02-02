@@ -2,10 +2,12 @@ const fileInput = document.getElementById("resumeInput");
 const analyzeBtn = document.getElementById("analyzeBtn");
 const statusDiv = document.getElementById("status");
 const resultPre = document.getElementById("result");
+const analysisModeEl = document.getElementById("analysis-mode");
 
 analyzeBtn.addEventListener("click", async () => {
   statusDiv.textContent = "Analyzing resume...";
   resultPre.textContent = "";
+  analysisModeEl.textContent = "";
 
   const file = fileInput.files[0];
 
@@ -32,8 +34,15 @@ Strong understanding of debugging, error handling, and production-ready systems.
     const data = await response.json();
 
     if (!response.ok) {
-      statusDiv.textContent = data.error || "Analysis failed.";
+      statusDiv.textContent = data.error?.message || "Analysis failed.";
       return;
+    }
+
+    // ✅ Commit 10: analysis mode transparency
+    if (data._meta && data._meta.ai_used === false) {
+      analysisModeEl.textContent = "Analysis Mode: Fallback (Mock)";
+    } else {
+      analysisModeEl.textContent = "Analysis Mode: AI";
     }
 
     statusDiv.textContent = "Analysis complete ✅";
