@@ -4,14 +4,10 @@ const statusDiv = document.getElementById("status");
 const resultPre = document.getElementById("result");
 const analysisModeEl = document.getElementById("analysis-mode");
 
-/* =========================
-   REQUEST LOCK (PREVENT DUPLICATES)
-========================= */
-
 let isAnalyzing = false;
 
 analyzeBtn.addEventListener("click", async () => {
-  if (isAnalyzing) return; // prevent duplicate clicks
+  if (isAnalyzing) return;
 
   const file = fileInput.files[0];
 
@@ -27,20 +23,23 @@ analyzeBtn.addEventListener("click", async () => {
   resultPre.textContent = "";
   analysisModeEl.textContent = "";
 
+  let timeoutId;
+
   try {
-    // Demo-safe placeholder text
-    const resumeText = `
-Experienced software developer with hands-on experience in JavaScript, Node.js,
-REST APIs, serverless architecture, and cloud deployment. Built multiple full-stack
-projects involving frontend UI, backend APIs, and third-party integrations.
-Strong understanding of debugging, error handling, and production-ready systems.
-`;
+    const resumeText = `Experienced software developer...`;
+
+    // Frontend timeout (10s)
+    timeoutId = setTimeout(() => {
+      statusDiv.textContent = "Request taking too long. Please try again.";
+    }, 10000);
 
     const response = await fetch("/api/analyze", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ resumeText }),
     });
+
+    clearTimeout(timeoutId);
 
     const data = await response.json();
 
@@ -49,21 +48,18 @@ Strong understanding of debugging, error handling, and production-ready systems.
       return;
     }
 
-    // cost-aware transparency
-    if (data._meta && data._meta.ai_used === false) {
-      analysisModeEl.textContent =
-        "Analysis Mode: Fallback (Mock) — AI calls disabled for cost-controlled demo (intentional)";
+    if (data._meta?.ai_used === false) {
+      analysisModeEl.textContent = "Fallback mode (AI unavailable)";
     } else {
-      analysisModeEl.textContent = "Analysis Mode: AI";
+      analysisModeEl.textContent = "AI mode";
     }
 
     statusDiv.textContent = "Analysis complete ✅";
     resultPre.textContent = JSON.stringify(data, null, 2);
   } catch (err) {
-    console.error(err);
+    clearTimeout(timeoutId);
     statusDiv.textContent = "Something went wrong.";
   } finally {
-    // ALWAYS RELEASE LOCK
     isAnalyzing = false;
     analyzeBtn.disabled = false;
   }
