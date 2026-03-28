@@ -4,10 +4,14 @@ const statusDiv = document.getElementById("status");
 const resultPre = document.getElementById("result");
 const analysisModeEl = document.getElementById("analysis-mode");
 
+/* =========================
+   REQUEST LOCK (PREVENT DUPLICATES)
+========================= */
+
+let isAnalyzing = false;
+
 analyzeBtn.addEventListener("click", async () => {
-  statusDiv.textContent = "Analyzing resume...";
-  resultPre.textContent = "";
-  analysisModeEl.textContent = "";
+  if (isAnalyzing) return; // prevent duplicate clicks
 
   const file = fileInput.files[0];
 
@@ -15,6 +19,13 @@ analyzeBtn.addEventListener("click", async () => {
     statusDiv.textContent = "Please upload a PDF resume.";
     return;
   }
+
+  isAnalyzing = true;
+  analyzeBtn.disabled = true;
+
+  statusDiv.textContent = "Analyzing resume...";
+  resultPre.textContent = "";
+  analysisModeEl.textContent = "";
 
   try {
     // Demo-safe placeholder text
@@ -38,7 +49,7 @@ Strong understanding of debugging, error handling, and production-ready systems.
       return;
     }
 
-    //  cost-aware transparency 
+    // cost-aware transparency
     if (data._meta && data._meta.ai_used === false) {
       analysisModeEl.textContent =
         "Analysis Mode: Fallback (Mock) — AI calls disabled for cost-controlled demo (intentional)";
@@ -51,5 +62,9 @@ Strong understanding of debugging, error handling, and production-ready systems.
   } catch (err) {
     console.error(err);
     statusDiv.textContent = "Something went wrong.";
+  } finally {
+    // ALWAYS RELEASE LOCK
+    isAnalyzing = false;
+    analyzeBtn.disabled = false;
   }
 });
