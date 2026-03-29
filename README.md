@@ -31,6 +31,7 @@ This project focuses on **engineering quality**, not feature bloat.
 - Clear and stable frontend ↔ backend API contract
 - Input validation, rate limiting, and defensive error handling
 - Predictable runtime behavior under failure conditions
+- End-to-end defensive pipeline design including input sanitization, timeout handling, and AI response validation
 
 **Design priority:** correctness, reliability, and explainability over UI polish.
 
@@ -115,6 +116,54 @@ A single resume analysis request flows through the following stages:
 
 ---
 
+## 🛡 Defensive Pipeline Design
+
+The resume analysis flow is designed as a **multi-stage defensive pipeline**, where each stage independently validates and protects the system.
+
+### 1. Input Validation
+
+- Rejects malformed or insufficient input early
+- Prevents unnecessary compute and AI calls
+
+### 2. Prompt Injection Protection
+
+- Resume text is sanitized before being sent to the AI
+- Common prompt injection patterns are removed (e.g., "ignore instructions", "act as")
+- The model is explicitly instructed to treat input as data, not commands
+
+### 3. Text Usability Check
+
+- Ensures extracted resume content is meaningful and non-empty
+- Prevents invalid data from reaching downstream stages
+
+### 4. Timeout-Controlled AI Execution
+
+- AI requests are wrapped with an AbortController
+- Requests are automatically cancelled if they exceed time limits
+- Prevents hanging serverless executions
+
+### 5. AI Response Validation
+
+- AI output is **strictly validated before being trusted**
+- Ensures required fields exist and match expected types
+- Invalid responses trigger fallback instead of breaking the system
+
+### 6. Graceful Fallback Layer
+
+- Any failure (timeout, invalid response, API error) triggers deterministic fallback
+- Ensures consistent response structure for the frontend
+
+---
+
+### Design Principle
+
+> Each stage assumes the previous stage can fail.
+
+This layered approach ensures:
+- system stability under unpredictable conditions  
+- safe integration of AI as a non-deterministic dependency  
+- predictable behavior during demos and real-world usage
+
 ## 🧠 How the AI Integration Works
 
 - The frontend extracts resume text and sends it to `/api/analyze`
@@ -133,6 +182,38 @@ This approach treats third-party APIs as **unreliable dependencies**, which is h
 
 This project intentionally treats AI services as **expensive, unreliable, and failure-prone dependencies**.  
 The system is designed to remain stable, predictable, and reviewable under those conditions.
+
+---
+
+## ⚠️ Failure Scenarios Handled
+
+This system explicitly handles multiple real-world failure cases:
+
+### AI-related failures
+
+- API timeout → request aborted → fallback triggered  
+- Invalid JSON response → rejected → fallback triggered  
+- Partial / malformed response → validated → fallback triggered  
+
+### User / input failures
+
+- Empty or invalid resume text → rejected early  
+- Repeated rapid submissions → rate limited  
+
+### System-level failures
+
+- Concurrent duplicate requests → blocked using in-flight request guard  
+- External API instability → isolated behind defensive logic  
+
+---
+
+### Outcome
+
+Instead of failing unpredictably, the system:
+
+- degrades gracefully  
+- maintains consistent API responses  
+- remains fully usable during failure conditions  
 
 ### Why rate limiting exists
 
