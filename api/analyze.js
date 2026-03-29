@@ -131,7 +131,39 @@ function validateResumeText(resumeText) {
 }
 
 /* =========================
-   STAGE 1: TEXT EXTRACTION CHECK (SIMULATED PARSE STAGE)
+   RESPONSE VALIDATION (NEW)
+========================= */
+
+function validateAIResponse(data) {
+  if (!data || typeof data !== "object") {
+    throw new Error("AI response is not an object");
+  }
+
+  if (typeof data.ats_score !== "number") {
+    throw new Error("Invalid ats_score");
+  }
+
+  if (!Array.isArray(data.strengths)) {
+    throw new Error("Invalid strengths");
+  }
+
+  if (!Array.isArray(data.weaknesses)) {
+    throw new Error("Invalid weaknesses");
+  }
+
+  if (!Array.isArray(data.missing_skills)) {
+    throw new Error("Invalid missing_skills");
+  }
+
+  if (!Array.isArray(data.suggestions)) {
+    throw new Error("Invalid suggestions");
+  }
+
+  return data;
+}
+
+/* =========================
+   STAGE 1: TEXT EXTRACTION CHECK
 ========================= */
 
 function ensureUsableText(text) {
@@ -217,16 +249,13 @@ export default async function handler(req, res) {
   try {
     const { resumeText } = req.body ?? {};
 
-    // STEP 1: Validate input
     const validation = validateResumeText(resumeText);
     if (!validation.ok) {
       return apiError(res, 400, "INVALID_INPUT", validation.message);
     }
 
-    // STEP 2: Sanitize input
     const safeText = sanitizeResumeText(resumeText);
 
-    // STEP 3: Ensure usable text (parse stage)
     let usableText;
     try {
       usableText = ensureUsableText(safeText);
@@ -234,7 +263,6 @@ export default async function handler(req, res) {
       return apiError(res, 400, "PARSE_FAILED", parseError.message);
     }
 
-    // STEP 4: Mock mode
     if (MOCK_MODE) {
       return res.status(200).json({
         success: true,
@@ -243,13 +271,25 @@ export default async function handler(req, res) {
       });
     }
 
-    // STEP 5: AI analysis with fallback
     try {
-      const result = await analyzeResumeWithAI(usableText);
+      const rawResult = await analyzeResumeWithAI(usableText);
+
+      let validatedResult;
+      try {
+        validatedResult = validateAIResponse(rawResult);
+      } catch (validationError) {
+        console.warn("⚠️ Invalid AI response:", validationError.message);
+
+        return res.status(200).json({
+          success: true,
+          ...buildDemoAnalysis(),
+          _meta: { ai_used: false, reason: "invalid_ai_response" },
+        });
+      }
 
       return res.status(200).json({
         success: true,
-        ...result,
+        ...validatedResult,
         _meta: { ai_used: true },
       });
     } catch (aiError) {
