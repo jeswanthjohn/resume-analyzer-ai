@@ -334,6 +334,36 @@ These trade-offs are **explicit, documented, and reversible**.
 
 ---
 
+## ⚖️ Trade-offs & Design Decisions
+
+This project intentionally prioritizes **reliability, clarity, and reviewability** over feature completeness.
+
+### Trade-off 1: Simplicity over full PDF parsing
+
+- Resume text extraction is simplified instead of building a complex parsing pipeline  
+- Ensures deterministic behavior during demos  
+- Avoids introducing instability from third-party parsing libraries  
+
+### Trade-off 2: Mock fallback over strict AI dependency
+
+- The system does not fail when AI is unavailable  
+- Instead, it returns a deterministic mock response  
+- This prioritizes **system availability over strict correctness**
+
+### Trade-off 3: Stateless serverless design over persistence
+
+- No database or caching layer is introduced  
+- Each request is processed independently  
+- Keeps the system easy to evaluate and deploy  
+
+---
+
+### Design Philosophy
+
+> This project demonstrates how to build a system that **remains stable even when its smartest component (AI) fails**.
+
+---
+
 ## 🔮 Potential Enhancements (Not Implemented Yet)
 
 The following improvements are intentionally **out of scope** for this project iteration:
@@ -344,6 +374,42 @@ The following improvements are intentionally **out of scope** for this project i
 - Enhanced UI layered on top of the existing API contract
 
 These are omitted to keep the project **focused, reviewable, and easy to evaluate**.
+
+---
+
+## 🧪 How to Evaluate This Project
+
+This project is best evaluated by focusing on **system behavior under failure conditions**, not just successful AI responses.
+
+### Suggested evaluation scenarios
+
+1. **Normal flow**
+   - Submit a resume and observe structured ATS feedback
+
+2. **Mock mode**
+   - Disable API key or enable MOCK_MODE  
+   - Verify the system continues to function with fallback data  
+
+3. **Rapid submissions**
+   - Trigger multiple requests quickly  
+   - Observe rate limiting and request guarding behavior  
+
+4. **Failure simulation**
+   - Force API failure or timeout  
+   - Confirm fallback response is returned without breaking the UI  
+
+---
+
+### What to look for
+
+- Consistent response structure across success and failure  
+- No UI crashes under backend failure  
+- Clear indication of fallback vs AI-generated results  
+- Predictable and explainable system behavior  
+
+---
+
+> The goal is not to demonstrate perfect AI output, but to demonstrate **robust system design around unreliable dependencies**.
 
 ---
 
