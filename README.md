@@ -142,7 +142,14 @@ The resume analysis flow is designed as a **multi-stage defensive pipeline**, wh
 - Requests are automatically cancelled if they exceed time limits
 - Prevents hanging serverless executions
 
-### 5. AI Response Validation
+### 5. Request Concurrency Protection
+
+- Prevents duplicate analysis requests from being processed simultaneously
+- Uses frontend UI locking and backend in-flight request guarding
+- Avoids accidental double submissions and unnecessary AI usage
+- Ensures predictable system behavior under rapid user interaction
+
+### 6. AI Response Validation
 
 - AI output is **strictly validated before being trusted**
 - Ensures required fields exist and match expected types
@@ -194,6 +201,12 @@ This system explicitly handles multiple real-world failure cases:
 - API timeout → request aborted → fallback triggered  
 - Invalid JSON response → rejected → fallback triggered  
 - Partial / malformed response → validated → fallback triggered  
+
+### Pipeline-stage failures
+
+- Resume extraction succeeds but AI analysis fails → fallback triggered
+- Upstream stage failure does not corrupt downstream processing
+- Pipeline stages remain isolated and independently recoverable
 
 ### User / input failures
 
@@ -277,6 +290,19 @@ The result is a system that prioritizes:
 That principle guides all cost, safety, and fallback decisions in this codebase.
 
 ---
+
+## ✅ Reliability Guarantees
+
+The application is designed around several operational guarantees:
+
+- Invalid AI responses are never trusted without validation
+- Duplicate analysis requests are prevented
+- Timeouts cannot leave requests hanging indefinitely
+- AI failures never break the frontend experience
+- Success and fallback responses share a stable API contract
+- Partial pipeline failures are isolated and recoverable
+
+These guarantees help ensure predictable behavior even when external dependencies behave unexpectedly.
 
 ## 🛠 Tech Stack
 
